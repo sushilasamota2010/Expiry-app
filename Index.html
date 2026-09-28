@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stock & Expiry Tracker</title>
+  
+  <!-- Google Fonts & Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- FullCalendar CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
+
+  <style>
+    :root {
+      --primary: #6C5CE7;
+      --secondary: #A29BFE;
+      --accent: #FD79A8;
+      --warning: #FF7675;
+      --success: #00B894;
+      --bg: #0984E3;
+      --card-bg: #FFFFFF;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
+    
+    body {
+      background: linear-gradient(135deg, #a8c0ff 0%, #3f2b96 100%);
+      min-height: 100vh;
+      padding: 15px;
+      color: #2d3436;
+    }
+
+    header {
+      text-align: center;
+      color: white;
+      margin-bottom: 20px;
+    }
+
+    header h1 { font-size: 1.8rem; font-weight: 700; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
+
+    /* Navigation Tabs */
+    .nav-tabs {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .tab-btn {
+      background: rgba(255, 255, 255, 0.2);
+      border: 2px solid white;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 25px;
+      font-weight: 600;
+      cursor: pointer;
+      backdrop-filter: blur(5px);
+      transition: all 0.3s;
+    }
+
+    .tab-btn.active {
+      background: white;
+      color: var(--primary);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+
+    .view-section { display: none; }
+    .view-section.active { display: block; }
+
+    /* Forms */
+    .card-form {
+      background: var(--card-bg);
+      padding: 20px;
+      border-radius: 20px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+      margin-bottom: 25px;
+    }
+
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; font-weight: 600; margin-bottom: 5px; color: #555; }
+    .form-group input, .form-group select {
+      width: 100%; padding: 12px; border: 2px solid #dfe6e9; border-radius: 10px; font-size: 1rem; outline: none;
+    }
+    .form-group input:focus { border-color: var(--primary); }
+
+    .submit-btn {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(45deg, #00b894, #00cec9);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,184,148,0.4);
+    }
+
+    /* Cards Grid */
+    .item-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .item-card {
+      background: white;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+      position: relative;
+      transition: transform 0.2s;
+    }
+
+    .item-card:hover { transform: translateY(-5px); }
+
+    .item-card img {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+    }
+
+    .card-body { padding: 15px; }
+    .card-title { font-weight: 700; font-size: 1.2rem; color: #2d3436; margin-bottom: 5px; }
+    
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 15px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: white;
+      margin-bottom: 10px;
+    }
+    .badge-ok { background-color: var(--success); }
+    .badge-warn { background-color: #fdcb6e; color: #2d3436; }
+    .badge-danger { background-color: var(--warning); }
+
+    .card-info { font-size: 0.9rem; color: #636e72; margin-bottom: 5px; }
+
+    .delete-btn {
+      background: var(--warning);
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      float: right;
+      margin-top: -5px;
+    }
+
+    /* Calendar */
+    #calendar {
+      background: white;
+      padding: 15px;
+      border-radius: 20px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1><i class="fa-solid fa-boxes-stacked"></i> Stock & Expiry Manager</h1>
+  </header>
+
+  <!-- Navigation -->
+  <div class="nav-tabs">
+    <button class="tab-btn active" onclick="switchTab('inventory')"><i class="fa-solid fa-list"></i> Items</button>
+    <button class="tab-btn" onclick="switchTab('add-item')"><i class="fa-solid fa-plus"></i> Add Item</button>
+    <button class="tab-btn" onclick="switchTab('calendar-view')"><i class="fa-solid fa-calendar"></i> Calendar</button>
+  </div>
+
+  <!-- Tab 1: Inventory List View -->
+  <div id="inventory" class="view-section active">
+    <div id="itemContainer" class="item-grid">
+      <!-- Dynamic Items will load here -->
+    </div>
+  </div>
+
+  <!-- Tab 2: Add New Item Form -->
+  <div id="add-item" class="view-section">
+    <div class="card-form">
+      <h2>Add New Item</h2>
+      <br>
+      <form id="itemForm">
+        <div class="form-group">
+          <label>Item Name</label>
+          <input type="text" id="itemName" placeholder="e.g. Fresh Milk / Paracetamol" required>
+        </div>
+        <div class="form-group">
+          <label>Category</label>
+          <select id="itemCategory">
+            <option value="Groceries">Groceries</option>
+            <option value="Medicines">Medicines</option>
+            <option value="Cosmetics">Cosmetics</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Quantity</label>
+          <input type="number" id="itemQty" placeholder="e.g. 5" required>
+        </div>
+        <div class="form-group">
+          <label>Minimum Low Stock Alert Level</label>
+          <input type="number" id="itemMinQty" placeholder="e.g. 2" required>
+        </div>
+        <div class="form-group">
+          <label>Expiry Date</label>
+          <input type="date" id="itemExpiry" required>
+        </div>
+        <div class="form-group">
+          <label>Image URL (Optional)</label>
+          <input type="url" id="itemImg" placeholder="https://example.com/image.jpg">
+        </div>
+        <button type="submit" class="submit-btn"><i class="fa-solid fa-cloud-arrow-up"></i> Save to Cloud</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Tab 3: Calendar View -->
+  <div id="calendar-view" class="view-section">
+    <div id="calendar"></div>
+  </div>
+
+  <!-- FullCalendar JS -->
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+
+  <!-- Firebase Integration -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // --- YOUR FIREBASE CONFIGURATION ---
+    const firebaseConfig = {
+      apiKey: "AIzaSyAHCXUE86VDpShGIxJdrnWuVzaJBvMhqxI",
+      authDomain: "item-expiry-app.firebaseapp.com",
+      projectId: "item-expiry-app",
+      storageBucket: "item-expiry-app.firebasestorage.app",
+      messagingSenderId: "985506869177",
+      appId: "1:985506869177:web:e342b40898273262bfd068",
+      measurementId: "G-TBVGC9XDER"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    let calendar;
+
+    // Load data from Firestore
+    async function fetchItems() {
+      const container = document.getElementById('itemContainer');
+      container.innerHTML = '';
+      
+      try {
+        const querySnapshot = await getDocs(collection(db, "stock_items"));
+        let calendarEvents = [];
+
+        querySnapshot.forEach((docData) => {
+          const item = docData.data();
+          const itemId = docData.id;
+          
+          // Expiry Calculation
+          const today = new Date();
+          const expDate = new Date(item.expiry);
+          const timeDiff = expDate - today;
+          const daysToExpiry = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+          let badgeClass = 'badge-ok';
+          let statusText = `${daysToExpiry} Days left`;
+
+          if (daysToExpiry <= 0) {
+            badgeClass = 'badge-danger';
+            statusText = 'EXPIRED!';
+          } else if (daysToExpiry <= 5) {
+            badgeClass = 'badge-warn';
+            statusText = `Expiring soon (${daysToExpiry} days)`;
+          }
+
+          let isLowStock = parseInt(item.qty) <= parseInt(item.minQty);
+
+          // UI Card Generation
+          const defaultImg = "https://images.unsplash.com/photo-1583258292688-d0213dc5a3a8?auto=format&fit=crop&w=400&q=80";
+          
+          const cardHTML = `
+            <div class="item-card">
+              <img src="${item.img || defaultImg}" alt="${item.name}">
+              <div class="card-body">
+                <button class="delete-btn" onclick="deleteItem('${itemId}')"><i class="fa-solid fa-trash"></i></button>
+                <div class="card-title">${item.name}</div>
+                <span class="badge ${badgeClass}">${statusText}</span>
+                ${isLowStock ? '<span class="badge badge-danger">LOW STOCK</span>' : ''}
+                <div class="card-info"><strong>Category:</strong> ${item.category}</div>
+                <div class="card-info"><strong>Stock:</strong> ${item.qty} pcs</div>
+                <div class="card-info"><strong>Expires:</strong> ${item.expiry}</div>
+              </div>
+            </div>
+          `;
+          container.innerHTML += cardHTML;
+
+          // Add to calendar data array
+          calendarEvents.push({
+            title: `Expire: ${item.name}`,
+            start: item.expiry,
+            color: daysToExpiry <= 3 ? '#FF7675' : '#6C5CE7'
+          });
+        });
+
+        renderCalendar(calendarEvents);
+      } catch (error) {
+        console.error("Error fetching items: ", error);
+      }
+    }
+
+    // Save Data to Firestore
+    document.getElementById('itemForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const newItem = {
+        name: document.getElementById('itemName').value,
+        category: document.getElementById('itemCategory').value,
+        qty: document.getElementById('itemQty').value,
+        minQty: document.getElementById('itemMinQty').value,
+        expiry: document.getElementById('itemExpiry').value,
+        img: document.getElementById('itemImg').value,
+        createdAt: new Date()
+      };
+
+      await addDoc(collection(db, "stock_items"), newItem);
+      document.getElementById('itemForm').reset();
+      switchTab('inventory');
+      fetchItems();
+    });
+
+    // Delete item
+    window.deleteItem = async (id) => {
+      if(confirm('Are you sure you want to remove this item?')) {
+        await deleteDoc(doc(db, "stock_items", id));
+        fetchItems();
+      }
+    };
+
+    // Calendar Render
+    function renderCalendar(events) {
+      const calendarEl = document.getElementById('calendar');
+      calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        events: events
+      });
+      calendar.render();
+    }
+
+    // Tab Switcher Logic
+    window.switchTab = (tabId) => {
+      document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+      
+      document.getElementById(tabId).classList.add('active');
+      
+      const activeBtn = Array.from(document.querySelectorAll('.tab-btn')).find(btn => btn.getAttribute('onclick').includes(tabId));
+      if (activeBtn) activeBtn.classList.add('active');
+
+      if(tabId === 'calendar-view' && calendar) {
+        setTimeout(() => calendar.updateSize(), 100);
+      }
+    };
+
+    // Initial Load
+    fetchItems();
+  </script>
+</body>
+</html>
